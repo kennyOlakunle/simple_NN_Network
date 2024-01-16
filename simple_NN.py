@@ -19,3 +19,14 @@ test_dataset = datasets.MNIST(root='./data', train=False, transform=transforms.T
 #DataLoader
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=100, shuffle=True)
+
+test_loader = DataLoader(dataset=test_dataset, batch_size=100, shuffle=False)
+
+#Define the fully connected neural network
+
+class NeuralNet(nn.module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(NeuralNet, self).__init__()
+        self.l1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.Relu()
+        self.l2 = nn.Linear(hidden_size, num_classes)
