@@ -18,15 +18,79 @@ test_dataset = datasets.MNIST(root='./data', train=False, transform=transforms.T
 
 #DataLoader
 
-train_loader = DataLoader(dataset=train_dataset, batch_size=100, shuffle=True)
+train_loader = DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
 
-test_loader = DataLoader(dataset=test_dataset, batch_size=100, shuffle=False)
+test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=False)
 
 #Define the fully connected neural network
 
-class NeuralNet(nn.module):
-    def __init__(self, input_size, hidden_size, num_classes):
+#Define the fully connected neural network
+class NeuralNet(nn.Module):
+    def __init__(self):
         super(NeuralNet, self).__init__()
-        self.l1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.Relu()
-        self.l2 = nn.Linear(hidden_size, num_classes)
+        self.l1 = nn.Linear(784, 500) 
+        self.relu = nn.ReLU()
+        self.l2 = nn.Linear(500, 10)
+
+    def forward(self, x):
+      out = self.l1(x)
+      out = self.relu(out)
+      out = self.l2(out)
+          # no activation and no softmax at the end
+      return out
+
+#Instantiate the model class
+        
+model = NeuralNet()
+
+#Instantiate the loss class 
+
+criterion = nn.CrossEntropyLoss()
+
+#Instantiate the optimizer class
+
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+#Training the model
+
+n_total_steps = len(train_loader)
+num_epochs = 3
+
+for epoch in range(num_epochs):
+    for i, (images, labels) in enumerate(train_loader):
+        # 100, 1, 28, 28
+        # 100, 784
+        images = images.reshape(-1, 28*28)
+        
+        #Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        
+        #Backward and optimize
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        if (i+1) % 100 == 0:
+            print(f'epoch {epoch+1} / {num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
+
+#Testing the model
+        
+with torch.no_grad():
+    n_correct = 0
+    n_samples = 0
+    for images, labels in test_loader:
+        images = images.reshape(-1, 28*28)
+        outputs = model(images)
+        
+        #value, index
+        _, predictions = torch.max(outputs, 1)
+        n_samples += labels.shape[0]
+        n_correct += (predictions == labels).sum().item()
+        
+    acc = 100.0 * n_correct / n_samples
+    print(f'Accuracy of the network on the 10000 test images: {acc} %')
+
+
+    # The above test returned: "Accuracy of the network on the 10000 test images: 98.12 %"
+
